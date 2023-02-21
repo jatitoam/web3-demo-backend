@@ -49,6 +49,8 @@ class Concordium {
       SchemaVersion.V2
     );
 
+    if (!returnValue.state.count) return [];
+
     const data = returnValue.state.filter((accountInfo) => {
       return accountInfo[0].Account[0] === account;
     });

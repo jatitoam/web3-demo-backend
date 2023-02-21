@@ -8,19 +8,19 @@ const Account = require("../models/accountModel");
 const Concordium = require("../web3/concordium");
 const concordium = new Concordium();
 
-const mime   = require('mime-types');
+const mime = require("mime-types");
 const multer = require("multer");
-let dirImg   = '/image/';
+let dirImg = "/image/";
 
 exports.add = async (req, res) => {
-
-  if (!fs.existsSync('.' + dirImg)){
-    fs.mkdirSync('.' + dirImg);
+  if (!fs.existsSync("." + dirImg)) {
+    fs.mkdirSync("." + dirImg);
   }
-    let ext = mime.extension(req.file.mimetype);
-    let imageName = req.body.name.replace(/\s/g, '_') + '_' + Date.now() + '.' + ext;
+  let ext = mime.extension(req.file.mimetype);
+  let imageName =
+    req.body.name.replace(/\s/g, "_") + "_" + Date.now() + "." + ext;
 
-  fs.writeFile('.' + dirImg + imageName, req.file.buffer, (err) => {
+  fs.writeFile("." + dirImg + imageName, req.file.buffer, (err) => {
     if (err) throw err;
   });
 
@@ -48,12 +48,30 @@ exports.list = async (req, res) => {
       return;
     }
 
+    if (
+      typeof req.query.signature === "undefined" ||
+      String(req.query.signature).trim() === ""
+    ) {
+      res.status(406).json({ error: "Missing signature" }).end();
+      return;
+    }
+
+    let signature;
+    try {
+      signature = JSON.parse(
+        Buffer.from(req.query.signature, "base64").toString()
+      );
+    } catch {
+      res.status(406).json({ error: "Invalid signature" }).end();
+      return;
+    }
+
     const nonce = account.nonce;
 
     if (
       !(await concordium.validateAccount(
         String(nonce),
-        JSON.parse(Buffer.from(req.query.signature, "base64").toString()),
+        signature,
         account.address
       ))
     ) {
